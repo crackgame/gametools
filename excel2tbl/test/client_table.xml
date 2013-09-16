@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="gbk"?>
+<root>
+
+<database xls="服务器列表.xls">
+	<table sheet="服务器列表" out="serverlist.tbl">
+		<field name="区号" type="INT" len="4"/>
+		<field name="名字" type="UTF8" len="128"/>
+		<field name="地址" type="UTF8" len="64"/>
+		<field name="端口" type="INT" len="4"/>
+		<field name="状态" type="INT" len="4"/>
+	</table>
+</database>
+
+
+</root>
