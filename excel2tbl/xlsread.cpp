@@ -25,14 +25,14 @@ CRecordset* xlsOpen(const char* xlsFile, const char* sheetName)
     CString strConnection;
     
     // 创建进行存取的字符串
-	strConnection="Driver={Microsoft Excel Driver (*.xls)};ReadOnly=0;DBQ=";
+	strConnection="Driver={Microsoft Excel Driver (*.xls)};ReadOnly=TRUE;DBQ=";
 	strConnection+=xlsFile;
     
 	TRY
     {
 	
         // 打开数据库(既Excel文件)
-        database.Open(NULL, false, false, strConnection);
+        database.Open(NULL, FALSE, TRUE, strConnection);
 	
         // 设置读取的查询语句.
 		sSql.Format("SELECT * FROM [%s$]", sheetName);

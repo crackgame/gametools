@@ -10,6 +10,8 @@
 
 using namespace std;
 
+#define TEMP_PATH	".\\temp\\"
+
 
 std::string AnsiToUtf8(std::string strAnsi)
 {
@@ -45,8 +47,7 @@ void DeleteDirFile(CString sPath)
 		while (::FindNextFile(hFind,&fd))
 		{
 			//判断是否为目录
-			if (fd.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)
-			{
+			if (fd.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) {
 				CString name;
 				name = fd.cFileName;
 				//判断是否为.和..
@@ -55,9 +56,9 @@ void DeleteDirFile(CString sPath)
 					//如果是真正的目录，进行递归
 					DeleteDirFile(sPath + fd.cFileName + "\\");
 				}
-			}
-			else
+			} else {
 				DeleteFile(sPath + fd.cFileName);
+			}
 		}
 		::FindClose(hFind);
 	}
@@ -98,7 +99,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	strOutPath += "/";
 
 	DeleteDirFile(strOutPath.c_str());
-	_rmdir(strOutPath.c_str());
 	_mkdir(strOutPath.c_str());
 
 	TiXmlDocument doc;
@@ -112,6 +112,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		printf("没有根节点 root");
 		return 0;
 	}
+
+	// 创建临时文件夹
+	DeleteDirFile(TEMP_PATH);
+	_mkdir(TEMP_PATH);
 
 	CRecordset* rs = NULL;
 	TiXmlNode* node = NULL;
@@ -141,7 +145,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			TRY
 			{
-				rs = xlsOpen(strXls.c_str(), strSheet.c_str());
+				// 为了防止打开已打开文件时报独占警告，复制一份出来进行处理
+				char tempFile[MAX_PATH];
+				sprintf(tempFile, "%s%s", TEMP_PATH, strXls.c_str());
+				CopyFile(strXls.c_str(), tempFile, FALSE);
+
+				rs = xlsOpen(tempFile, strSheet.c_str());
 				if (rs == NULL) {
 					printf("打开表格失败，或没有工作表 xls=%s, sheet=%s\n", strXls.c_str(), strSheet.c_str());
 					return 0;
@@ -214,7 +223,9 @@ int _tmain(int argc, _TCHAR* argv[])
 							FLOAT num = (FLOAT)strtod(strValue.GetBuffer(0), NULL);
 							fwrite(&num, sizeof(num), 1, pFile);
 						} else if (sFiled.type == "BIGINT") {
-							UINT64 num = (UINT64)strtod(strValue.GetBuffer(0), NULL);
+							UINT64 num = 0;
+							sscanf(strValue.GetBuffer(0), "%llu", &num);
+							//UINT64 num = (UINT64)strtod(strValue.GetBuffer(0), NULL);
 							fwrite(&num, sizeof(num), 1, pFile);
 						} else if (sFiled.type == "ANSI") {
 							char* tmp = new char[sFiled.size+1];
@@ -264,6 +275,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 		database = (TiXmlElement*)database->NextSibling();
 	}
+
+	// 删除临时文件夹
+	DeleteDirFile(TEMP_PATH);
 
 	printf("所有数据导出成功！\n");
 #ifdef _DEBUG
